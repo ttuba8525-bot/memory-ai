@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insights — DejaVu.ai</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='insights.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+/* Lucide icon tweaks */
+.lc { width:18px;height:18px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0; }
+.card-title .lc { color:var(--accent); }
+.stat-icon-wrap { width:44px;height:44px;border-radius:12px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;margin-bottom:12px; }
+body.dark .stat-icon-wrap { background:rgba(245,158,11,.08); }
+.stat-icon-wrap .lc { width:22px;height:22px;color:var(--accent); }
+/* Pipeline tweaks */
+.pipe-arrow { color:var(--pipe);font-size:1.1rem;align-self:center;flex-shrink:0; }
+/* Nav */
+.nav-link .lc { width:14px;height:14px;margin-right:4px; }
+/* Conflict card */
+.conflict-card { background:var(--bg2);border:1px solid var(--border);border-left:3px solid #f59e0b;border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:8px;animation:slideIn .4s ease both; }
+.conflict-card .cf-time { color:var(--muted);font-size:.72rem;margin-bottom:4px; }
+.conflict-card .cf-removed { color:var(--accent);font-weight:600; }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <a href="/chat" class="nav-brand">DejaVu.ai</a>
+    <div class="nav-links">
+        <a href="/chat"      class="nav-link"><i data-lucide="message-circle" class="lc"></i>Chat</a>
+        <a href="/memory"    class="nav-link"><i data-lucide="database" class="lc"></i>Memory</a>
+        <a href="/insights"  class="nav-link active"><i data-lucide="bar-chart-2" class="lc"></i>Insights</a>
+        <a href="/legal"     class="nav-link"><i data-lucide="file-text" class="lc"></i>Legal</a>
+        <a href="/reminders" class="nav-link"><i data-lucide="bell" class="lc"></i>Reminders</a>
+        <a href="/profile"   class="nav-link"><i data-lucide="user" class="lc"></i>Profile</a>
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()"><span id="t-icon">◑</span> <span id="t-label">Dark</span></button>
+</nav>
+
+<div class="page">
+    <div class="page-header">
+        <h1>System Insights</h1>
+        <p>A live look at how DejaVu.ai builds and uses your memory in real time.</p>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-row">
+        <div class="stat-card">
+            <div class="stat-icon-wrap"><i data-lucide="layers" class="lc"></i></div>
+            <div class="stat-label">Total Memories</div>
+            <div class="stat-value" id="s-total">—</div>
+            <div class="stat-sub">Facts + Preferences</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-wrap"><i data-lucide="bookmark" class="lc"></i></div>
+            <div class="stat-label">Facts Stored</div>
+            <div class="stat-value" id="s-facts">—</div>
+            <div class="stat-sub">Concrete knowledge</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-wrap"><i data-lucide="heart" class="lc"></i></div>
+            <div class="stat-label">Preferences</div>
+            <div class="stat-value" id="s-prefs">—</div>
+            <div class="stat-sub">Tastes &amp; habits</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-wrap"><i data-lucide="zap" class="lc"></i></div>
+            <div class="stat-label">Session Turns</div>
+            <div class="stat-value" id="s-turns">—</div>
+            <div class="stat-sub">Messages this session</div>
+        </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="card card-full" style="margin-bottom:24px;">
+        <div class="card-title"><i data-lucide="cpu" class="lc"></i> Agent Processing Pipeline</div>
+        <div class="pipeline">
+            <div class="pipe-node"><div class="pipe-box"><div class="pipe-icon">↗</div><div class="pipe-name">Input</div><div class="pipe-type">Trigger</div></div></div>
+            <div class="pipe-node agent"><div class="pipe-box"><div class="pipe-icon">⌕</div><div class="pipe-name">Retrieval</div><div class="pipe-type">Agent</div></div></div>
+            <div class="pipe-node"><div class="pipe-box"><div class="pipe-icon">◫</div><div class="pipe-name">Memory</div><div class="pipe-type">Store</div></div></div>
+            <div class="pipe-node llm"><div class="pipe-box"><div class="pipe-icon">◈</div><div class="pipe-name">LLM Core</div><div class="pipe-type">Model</div></div></div>
+            <div class="pipe-node agent"><div class="pipe-box"><div class="pipe-icon">⊕</div><div class="pipe-name">Extractor</div><div class="pipe-type">Agent</div></div></div>
+            <div class="pipe-node agent"><div class="pipe-box"><div class="pipe-icon">⊘</div><div class="pipe-name">Conflict</div><div class="pipe-type">Agent</div></div></div>
+            <div class="pipe-node"><div class="pipe-box"><div class="pipe-icon">↙</div><div class="pipe-name">Response</div><div class="pipe-type">Output</div></div></div>
+        </div>
+    </div>
+
+    <!-- Row 1: Donut + Radar -->
+    <div class="section-grid" style="margin-bottom:24px;">
+        <div class="card">
+            <div class="card-title"><i data-lucide="pie-chart" class="lc"></i> Memory Composition</div>
+            <div class="chart-wrap"><canvas id="donut-chart"></canvas></div>
+        </div>
+        <div class="card">
+            <div class="card-title"><i data-lucide="activity" class="lc"></i> Memory Health Profile</div>
+            <div class="chart-wrap"><canvas id="radar-chart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Row 2: Growth (full width) -->
+    <div class="card card-full" style="margin-bottom:24px;">
+        <div class="card-title"><i data-lucide="trending-up" class="lc"></i> Memory Growth Over Time</div>
+        <div class="chart-wrap" style="height:220px;"><canvas id="growth-chart"></canvas></div>
+    </div>
+
+    <!-- Row 3: Conflict log -->
+    <div class="card card-full" style="margin-bottom:24px;">
+        <div class="card-title"><i data-lucide="shield-alert" class="lc"></i> Conflict Resolution Log
+            <span style="margin-left:auto;font-size:.78rem;font-weight:400;color:var(--muted);">Last 5 resolved conflicts</span>
+        </div>
+        <div id="conflict-log"></div>
+    </div>
+
+</div>
+
+<script>
+// Theme
+function toggleTheme(){const d=document.body.classList.toggle('dark');localStorage.setItem('deja-theme',d?'dark':'light');document.getElementById('t-icon').textContent=d?'○':'◑';document.getElementById('t-label').textContent=d?'Light':'Dark';rebuildCharts();}
+if(localStorage.getItem('deja-theme')==='dark'){document.body.classList.add('dark');document.getElementById('t-icon').textContent='○';document.getElementById('t-label').textContent='Light';}
+
+// Color helpers
+function isDark(){return document.body.classList.contains('dark');}
+function A(){return isDark()?'#F59E0B':'#b45309';}
+function B(){return isDark()?'#06B6D4':'#0891b2';}
+function C(){return isDark()?'rgba(245,158,11,.15)':'rgba(180,83,9,.08)';}
+function TC(){return isDark()?'rgba(253,220,120,.7)':'#78716C';}
+function GC(){return isDark()?'rgba(245,158,11,.07)':'rgba(0,0,0,.05)';}
+function GLC(){return isDark()?'rgba(245,158,11,.12)':'rgba(0,0,0,.07)';}
+
+let donutC=null,radarC=null,growthC=null;
+
+function buildDonut(f,p){
+    if(donutC)donutC.destroy();
+    donutC=new Chart(document.getElementById('donut-chart'),{
+        type:'doughnut',
+        data:{labels:['Facts','Preferences'],datasets:[{data:[f||0,p||0],backgroundColor:[A(),B()],borderWidth:0,hoverOffset:8}]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:TC(),padding:16,font:{size:12}}}}}
+    });
+}
+
+function buildRadar(f,p,turns,topics,conflicts){
+    if(radarC)radarC.destroy();
+    const max=Math.max(f,p,turns,topics,conflicts,1);
+    radarC=new Chart(document.getElementById('radar-chart'),{
+        type:'radar',
+        data:{
+            labels:['Facts','Preferences','Turns','Topics','Conflicts'],
+            datasets:[{label:'Memory Profile',data:[f,p,turns,topics,conflicts],backgroundColor:C(),borderColor:A(),pointBackgroundColor:A(),borderWidth:2,pointRadius:4}]
+        },
+        options:{responsive:true,maintainAspectRatio:false,
+            plugins:{legend:{display:false}},
+            scales:{r:{ticks:{display:false,stepSize:Math.ceil(max/4)},grid:{color:GLC()},angleLines:{color:GLC()},pointLabels:{color:TC(),font:{size:11}}}}}
+    });
+}
+
+function buildGrowth(arr){
+    if(growthC)growthC.destroy();
+    if(!arr||!arr.length)return;
+    growthC=new Chart(document.getElementById('growth-chart'),{
+        type:'line',
+        data:{labels:arr.map(g=>g[0]),datasets:[{label:'Memories Added',data:arr.map(g=>g[1]),borderColor:A(),backgroundColor:C(),fill:true,tension:.4,pointRadius:3,pointBackgroundColor:A()}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+            scales:{x:{grid:{display:false},ticks:{color:TC(),maxTicksLimit:6}},y:{beginAtZero:true,grid:{color:GC()},ticks:{color:TC(),stepSize:1}}}}
+    });
+}
+
+
+function rebuildCharts(){
+    if(donutC){const d=donutC.data.datasets[0].data;buildDonut(d[0],d[1]);}
+    if(radarC){const d=radarC.data.datasets[0].data;buildRadar(...d);}
+    if(growthC){const l=growthC.data.labels,v=growthC.data.datasets[0].data;buildGrowth(l.map((x,i)=>[x,v[i]]));}
+}
+
+async function loadStats(){
+    try{
+        const d=await fetch('/api/memory-stats').then(r=>r.json());
+        document.getElementById('s-total').textContent=d.total_memories;
+        document.getElementById('s-facts').textContent=d.total_facts;
+        document.getElementById('s-prefs').textContent=d.total_preferences;
+        document.getElementById('s-turns').textContent=d.session_turns;
+
+        buildDonut(d.total_facts,d.total_preferences);
+        buildRadar(d.total_facts,d.total_preferences,d.session_turns,(d.topic_clusters||[]).length,(d.recent_conflicts||[]).length);
+        if(d.growth_by_day)buildGrowth(d.growth_by_day);
+
+        // Conflict log
+        const cl=document.getElementById('conflict-log');
+        const conflicts=d.recent_conflicts||[];
+        if(!conflicts.length){
+            cl.innerHTML='<p style="color:var(--muted);font-size:.87rem;padding:8px 0;">No conflicts detected yet — memory is clean.</p>';
+        } else {
+            cl.innerHTML=conflicts.map(c=>`
+                <div class="conflict-card">
+                    <div class="cf-time">${new Date(c.ts).toLocaleString()}</div>
+                    <div>Replaced: <span class="cf-removed">${(c.removed||[]).join(' · ')}</span></div>
+                </div>`).join('');
+        }
+    }catch(e){console.error(e);}
+}
+
+loadStats();
+setInterval(loadStats,15000);
+lucide.createIcons();
+</script>
+</body>
+</html>

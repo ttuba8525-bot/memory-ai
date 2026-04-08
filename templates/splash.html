@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dejavu - AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='splash.css') }}?v={{ range(1000,9999)|random }}">
+    <style>
+        #video-overlay { position:fixed; inset:0; z-index:9999; background:#000; display:flex; justify-content:center; align-items:center; transition:opacity 1.2s ease; }
+        #video-overlay.fade-out { opacity:0; pointer-events:none; }
+        #intro-video { width:100%; height:100%; object-fit:cover; }
+        .splash-content { opacity:0; transition:opacity 1.2s ease; }
+        .splash-content.visible { opacity:1; }
+    </style>
+</head>
+<body>
+    <!-- Theme toggle -->
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">
+        <span id="theme-icon">☀️</span> <span id="theme-label">Light</span>
+    </button>
+
+    <!-- Video intro -->
+    <div id="video-overlay">
+        <video id="intro-video" autoplay muted playsinline>
+            <source src="/assets/Animated_Video_In_Light_Theme.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- Splash content -->
+    <div class="splash-content" id="splash-content">
+        <canvas id="particle-canvas"></canvas>
+        <div class="aurora a1"></div>
+        <div class="aurora a2"></div>
+        <div class="aurora a3"></div>
+        <div class="card-wrapper">
+            <div class="border-spin"></div>
+            <div class="glow-ring"></div>
+            <div class="card">
+                <div class="status-row">
+                    <span class="pulse-dot"></span>
+                    <span class="status-text">Agentic Memory System Online</span>
+                </div>
+                <h1 class="title" id="title"></h1>
+                <p class="quote">Relive intelligence. Reimagine memory.</p>
+                <div class="chips">
+                    <span class="chip">🧠 Persistent Memory</span>
+                    <span class="chip">⚡ Real-time Recall</span>
+                    <span class="chip">🔮 Conflict Resolution</span>
+                </div>
+                <button class="get-started-btn" onclick="window.location.href='/auth'">
+                    Get Started <span class="btn-arrow">→</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme persistence
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            document.getElementById('theme-icon').textContent = isLight ? '🌙' : '☀️';
+            document.getElementById('theme-label').textContent = isLight ? 'Dark' : 'Light';
+        }
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light');
+            document.getElementById('theme-icon').textContent = '🌙';
+            document.getElementById('theme-label').textContent = 'Dark';
+        }
+
+        // Video logic
+        const overlay = document.getElementById('video-overlay');
+        const video   = document.getElementById('intro-video');
+        const splash  = document.getElementById('splash-content');
+
+        function revealSplash() {
+            overlay.classList.add('fade-out');
+            overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+            splash.classList.add('visible');
+            setTimeout(startTypewriter, 600);
+        }
+        video.addEventListener('ended', revealSplash);
+        video.addEventListener('error', () => setTimeout(revealSplash, 800));
+        overlay.addEventListener('click', revealSplash);
+
+        function startTypewriter() {
+            const text = "Dejavu - AI", el = document.getElementById('title');
+            let i = 0;
+            (function type() { if (i < text.length) { el.textContent += text[i++]; setTimeout(type, 100); } })();
+        }
+
+        // Particles
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+        resize(); window.addEventListener('resize', resize);
+        const P = Array.from({length:100}, () => ({
+            x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+            r:Math.random()*2+.5, dx:(Math.random()-.5)*.4, dy:(Math.random()-.5)*.4, a:Math.random()*.4+.1
+        }));
+        function draw() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            P.forEach(p => {
+                ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+                ctx.fillStyle=`rgba(220,100,255,${p.a})`; ctx.fill();
+                p.x+=p.dx; p.y+=p.dy;
+                if(p.x<0||p.x>canvas.width) p.dx*=-1;
+                if(p.y<0||p.y>canvas.height) p.dy*=-1;
+            });
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
+</body>
+</html>

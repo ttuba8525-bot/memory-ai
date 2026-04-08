@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — DejaVu.ai</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='insights.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{ --avatar-bg: linear-gradient(135deg,#f59e0b,#06b6d4); }
+.avatar-circle{width:96px;height:96px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:2.4rem;font-weight:700;color:#000;margin:0 auto 16px;box-shadow:0 4px 24px rgba(245,158,11,.3);}
+.profile-name{font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:700;text-align:center;background:linear-gradient(135deg,#f59e0b,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.profile-email{text-align:center;color:var(--muted);font-size:.9rem;margin-top:4px;}
+.profile-header-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius,18px);padding:32px;text-align:center;margin-bottom:24px;box-shadow:0 4px 24px var(--shadow);}
+.meta-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:20px;}
+.meta-badge{background:var(--bg2);border:1px solid var(--border);border-radius:30px;padding:6px 14px;font-size:.82rem;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.meta-badge strong{color:var(--text);}
+.persona-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px;}
+.persona-card{background:var(--bg2);border:2px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .25s;text-align:center;}
+.persona-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.persona-card.active{border-color:var(--accent);background:rgba(245,158,11,.06);}
+body.dark .persona-card.active{background:rgba(245,158,11,.08);}
+.persona-card .p-icon{font-size:2rem;margin-bottom:6px;}
+.persona-card .p-name{font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;color:var(--text);}
+.persona-card .p-desc{font-size:.75rem;color:var(--muted);margin-top:3px;}
+.save-btn{width:100%;margin-top:16px;padding:13px;background:linear-gradient(135deg,#f59e0b,#06b6d4);color:#000;border:none;border-radius:12px;font-family:'Sora',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .3s;}
+.save-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(245,158,11,.3);}
+.logout-btn{display:block;text-align:center;margin-top:16px;color:var(--muted);font-size:.85rem;text-decoration:none;transition:color .2s;}
+.logout-btn:hover{color:var(--accent);}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="/chat" class="nav-brand"><span>🤖</span> DejaVu.ai</a>
+  <div class="nav-links">
+    <a href="/chat"     class="nav-link">💬 Chat</a>
+    <a href="/memory"   class="nav-link">🧠 Memory</a>
+    <a href="/insights" class="nav-link">📊 Insights</a>
+    <a href="/legal"    class="nav-link">⚖️ Legal</a>
+    <a href="/reminders"class="nav-link">🔔 Reminders</a>
+    <a href="/profile"  class="nav-link active">👤 Profile</a>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()"><span id="t-icon">🌙</span> <span id="t-label">Dark</span></button>
+</nav>
+
+<div class="page">
+  <div class="section-grid" style="grid-template-columns:400px 1fr;gap:24px;align-items:start;">
+    <!-- Left: profile card -->
+    <div>
+      <div class="profile-header-card">
+        <div class="avatar-circle" id="av-initials">?</div>
+        <div class="profile-name" id="prof-name">Loading…</div>
+        <div class="profile-email" id="prof-email"></div>
+        <div class="meta-row">
+          <div class="meta-badge">📌 <strong id="m-facts">—</strong> Facts</div>
+          <div class="meta-badge">⭐ <strong id="m-prefs">—</strong> Prefs</div>
+          <div class="meta-badge">💬 <strong id="m-turns">—</strong> Turns</div>
+          <div class="meta-badge" id="m-since"></div>
+        </div>
+        <a href="/memory" class="logout-btn" style="margin-top:12px;display:inline-block;">🧠 Manage Memories →</a>
+        <a href="/auth/logout" class="logout-btn">Sign Out</a>
+      </div>
+    </div>
+    <!-- Right: persona selector -->
+    <div class="card">
+      <div class="card-title"><span>🎭</span> AI Persona</div>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px;">Choose how DejaVu.ai communicates with you.</p>
+      <div class="persona-grid">
+        <div class="persona-card" data-p="friend" onclick="selectPersona('friend')">
+          <div class="p-icon">🤝</div><div class="p-name">Casual Friend</div>
+          <div class="p-desc">Warm, conversational, uses humour</div>
+        </div>
+        <div class="persona-card" data-p="tutor" onclick="selectPersona('tutor')">
+          <div class="p-icon">📚</div><div class="p-name">Patient Tutor</div>
+          <div class="p-desc">Step-by-step, clarifying, educational</div>
+        </div>
+        <div class="persona-card" data-p="coach" onclick="selectPersona('coach')">
+          <div class="p-icon">🏆</div><div class="p-name">Life Coach</div>
+          <div class="p-desc">Motivating, goal-focused, accountable</div>
+        </div>
+        <div class="persona-card" data-p="formal" onclick="selectPersona('formal')">
+          <div class="p-icon">💼</div><div class="p-name">Professional</div>
+          <div class="p-desc">Precise, structured, no-nonsense</div>
+        </div>
+      </div>
+      <button class="save-btn" onclick="savePersona()">Save Persona</button>
+      <div id="persona-msg" style="text-align:center;margin-top:10px;font-size:.82rem;color:var(--accent);opacity:0;transition:opacity .3s;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedPersona = 'friend';
+function toggleTheme(){const d=document.body.classList.toggle('dark');localStorage.setItem('deja-theme',d?'dark':'light');document.getElementById('t-icon').textContent=d?'☀️':'🌙';document.getElementById('t-label').textContent=d?'Light':'Dark';}
+if(localStorage.getItem('deja-theme')==='dark'){document.body.classList.add('dark');document.getElementById('t-icon').textContent='☀️';document.getElementById('t-label').textContent='Light';}
+function selectPersona(p){selectedPersona=p;document.querySelectorAll('.persona-card').forEach(c=>c.classList.toggle('active',c.dataset.p===p));}
+async function savePersona(){
+  const r=await fetch('/api/persona',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona:selectedPersona})});
+  const msg=document.getElementById('persona-msg');
+  msg.textContent='✓ Persona saved!';msg.style.opacity=1;
+  setTimeout(()=>msg.style.opacity=0,2000);
+}
+async function loadProfile(){
+  const [me,stats]=await Promise.all([fetch('/auth/me').then(r=>r.json()),fetch('/api/memory-stats').then(r=>r.json())]);
+  if(me.user){
+    const initials=me.user.slice(0,2).toUpperCase();
+    document.getElementById('av-initials').textContent=initials;
+    document.getElementById('prof-name').textContent=me.user;
+    document.getElementById('prof-email').textContent=me.email||'Guest session';
+    document.getElementById('m-since').innerHTML=`📅 <strong>${me.created_at?me.created_at.slice(0,10):'—'}</strong>`;
+    selectedPersona=me.persona||'friend';
+    selectPersona(selectedPersona);
+  }
+  document.getElementById('m-facts').textContent=stats.total_facts||0;
+  document.getElementById('m-prefs').textContent=stats.total_preferences||0;
+  document.getElementById('m-turns').textContent=stats.session_turns||0;
+}
+loadProfile();
+</script>
+</body></html>

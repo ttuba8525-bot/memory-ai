@@ -3,34 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agentic Memory AI</title>
+    <title>DejaVu.ai — Memory-Powered AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+      .lc{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;}
+      /* Persona dropdown */
+      .persona-select{background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-family:'Inter',sans-serif;font-size:.82rem;cursor:pointer;transition:border-color .2s;}
+      .persona-select:focus{outline:none;border-color:var(--accent);}
+      /* Copy tooltip */
+      .copy-btn{background:none;border:none;cursor:pointer;opacity:0;font-size:.9rem;padding:2px 5px;border-radius:5px;transition:opacity .2s;margin-left:4px;color:var(--text-muted);}
+      .msg-row:hover .copy-btn{opacity:.6;}
+      .copy-btn:hover{opacity:1!important;}
+      /* Nav strip above chat */
+      .app-nav{display:flex;gap:6px;align-items:center;padding:0 4px 0;}
+      .app-nav a{text-decoration:none;color:var(--text-muted);font-size:.78rem;padding:4px 8px;border-radius:8px;transition:all .2s;}
+      .app-nav a:hover{background:var(--bg2);color:var(--text);}
+      /* Export btn in header */
+      .export-btn{font-size:.75rem;padding:5px 10px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+      .export-btn:hover{border-color:var(--accent);color:var(--text);}
+      /* Trace accordion in sidebar */
+      .trace-section{margin-top:16px;border-top:1px solid var(--border);padding-top:12px;}
+      .trace-title{font-family:'Sora',sans-serif;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+      .trace-step{background:var(--bg2);border-radius:8px;padding:8px 10px;font-size:.78rem;margin-bottom:6px;border-left:2px solid var(--accent);}
+      .trace-step .ts-name{font-weight:700;color:var(--text);margin-bottom:2px;}
+      .trace-step .ts-ms{color:var(--muted);float:right;}
+      .trace-step .ts-result{color:var(--muted);font-size:.73rem;margin-top:2px;word-break:break-word;}
+    </style>
 </head>
 <body>
+    <!-- Global theme toggle -->
+    <button id="global-theme-btn" onclick="toggleTheme()">
+        <span id="g-icon">◑</span>
+        <span id="g-label">Dark</span>
+    </button>
+
+    <!-- ── Chat area ── -->
     <div class="chat-container">
         <header>
-            <h1>Agentic Memory AI</h1>
-            <p>I remember everything you tell me.</p>
+            <div class="header-brand">
+                <button class="icon-btn" id="sidebar-toggle" title="Toggle Memory Panel">≡</button>
+                <div class="brand-icon" style="font-size:1.1rem;font-weight:700;font-family:'Sora',sans-serif;letter-spacing:-1px;">DV</div>
+                <div class="brand-text">
+                    <h1>DejaVu.ai</h1>
+                    <p>Memory-powered AI companion</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <!-- Persona -->
+                <select class="persona-select" id="persona-select" title="AI Persona" onchange="changePersona(this.value)">
+                    <option value="friend">Friend</option>
+                    <option value="tutor">Tutor</option>
+                    <option value="coach">Coach</option>
+                    <option value="formal">Formal</option>
+                </select>
+                <button class="export-btn" onclick="exportChat()" title="Export conversation">↓ Export</button>
+                <a href="/insights" title="Insights" style="text-decoration:none;"><button class="icon-btn"><i data-lucide="bar-chart-2" class="lc"></i></button></a>
+                <a href="/memory"   title="Memory"   style="text-decoration:none;"><button class="icon-btn"><i data-lucide="database" class="lc"></i></button></a>
+                <a href="/legal"    title="Legal"    style="text-decoration:none;"><button class="icon-btn"><i data-lucide="file-text" class="lc"></i></button></a>
+                <a href="/reminders"title="Reminders"style="text-decoration:none;"><button class="icon-btn"><i data-lucide="bell" class="lc"></i></button></a>
+                <a href="/profile"  title="Profile"  style="text-decoration:none;"><button class="icon-btn"><i data-lucide="user" class="lc"></i></button></a>
+                <button class="icon-btn" id="tts-toggle" title="Toggle Voice"><i data-lucide="volume-x" class="lc" id="vol-icon"></i></button>
+            </div>
         </header>
 
         <div class="chat-box" id="chat-box">
-            <div class="message ai">Hello! I am your companion AI. I can learn and remember facts and preferences about you across sessions. Tell me something about yourself!</div>
+            <div class="msg-row ai">
+                <div class="avatar ai-avatar">🤖</div>
+                <div>
+                    <div class="message-content ai">Hello! I'm your AI companion with persistent memory. I remember what you tell me across sessions. Try sharing something about yourself!</div>
+                    <span class="timestamp">Just now</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="typing-indicator hidden" id="typing-indicator">
+            <div class="avatar ai-avatar">🤖</div>
+            <div class="thinking-card">
+                <div class="dots"><span></span><span></span><span></span></div>
+                Thinking…
+            </div>
         </div>
 
         <div class="input-area">
-            <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off"/>
-            <button id="send-btn">Send</button>
-        </div>
-    </div>
-    
-    <div class="sidebar">
-        <h3>Memory Console Logs</h3>
-        <div id="memory-logs" class="memory-logs">
-            <!-- Memory logs go here -->
+            <input type="text" id="user-input" placeholder="Send a message…" autocomplete="off"/>
+            <button id="voice-btn" title="Voice Input">🎤</button>
+            <button id="send-btn">Send ↑</button>
         </div>
     </div>
 
+    <!-- ── Memory Console Sidebar ── -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="console-icon">⚡</div>
+            <h3>Memory Console</h3>
+            <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        </div>
+        <div id="memory-logs" class="memory-logs"></div>
+        <div id="trace-panel" style="padding:0 14px 14px;"></div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark');
+            localStorage.setItem('deja-theme', isDark ? 'dark' : 'light');
+            document.getElementById('g-icon').textContent = isDark ? '☀️' : '🌙';
+            document.getElementById('g-label').textContent = isDark ? 'Light' : 'Dark';
+        }
+        if (localStorage.getItem('deja-theme') === 'dark') {
+            document.body.classList.add('dark');
+            document.getElementById('g-icon').textContent = '☀️';
+            document.getElementById('g-label').textContent = 'Light';
+        }
+
+        // Persona
+        const savedPersona = localStorage.getItem('deja-persona') || 'friend';
+        document.getElementById('persona-select').value = savedPersona;
+        async function changePersona(p) {
+            localStorage.setItem('deja-persona', p);
+            await fetch('/api/persona', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({persona:p})});
+        }
+
+        // Export
+        function exportChat() { window.location.href = '/api/export'; }
+
+        // Render agent trace in sidebar panel
+        function renderTrace(trace) {
+            if(!trace || !trace.length) return;
+            const panel = document.getElementById('trace-panel');
+            panel.innerHTML = `<div class="trace-section">
+              <div class="trace-title">⚡ Agent Trace</div>
+              ${trace.map(s=>`<div class="trace-step">
+                <span class="ts-ms">${s.ms}ms</span>
+                <div class="ts-name">${s.step}</div>
+                <div class="ts-result">${s.result||''}</div>
+              </div>`).join('')}
+            </div>`;
+        }
+    </script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        lucide.createIcons();
+        // Fix theme toggle icons
+        const _g = localStorage.getItem('deja-theme');
+        if(_g==='dark'){document.getElementById('g-icon').textContent='○';document.getElementById('g-label').textContent='Light';}
+        const _origToggle = toggleTheme;
+        toggleTheme = function(){
+            const d=document.body.classList.toggle('dark');
+            localStorage.setItem('deja-theme',d?'dark':'light');
+            document.getElementById('g-icon').textContent=d?'○':'◑';
+            document.getElementById('g-label').textContent=d?'Light':'Dark';
+        };
+    </script>
 </body>
 </html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Editor — DejaVu.ai</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='insights.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+.search-bar{display:flex;gap:10px;margin-bottom:24px;}
+.search-bar input{flex:1;padding:12px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'Inter',sans-serif;font-size:.94rem;outline:none;transition:border-color .25s;}
+.search-bar input:focus{border-color:var(--accent);}
+.search-bar input::placeholder{color:var(--muted);}
+.search-btn{padding:12px 20px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#06b6d4);border:none;color:#000;font-family:'Sora',sans-serif;font-weight:700;cursor:pointer;transition:all .25s;}
+.search-btn:hover{transform:translateY(-1px);}
+.mem-columns{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:700px){.mem-columns{grid-template-columns:1fr;}}
+.mem-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;animation:logSlide .3s ease both;transition:border-color .2s;}
+.mem-card:hover{border-color:var(--accent);}
+.mem-card.fact-card{border-left:3px solid var(--accent);}
+.mem-card.pref-card{border-left:3px solid var(--accent2);}
+.mem-text{flex:1;font-size:.85rem;line-height:1.5;color:var(--text);word-break:break-word;}
+.mem-edit-input{flex:1;font-size:.85rem;padding:4px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--surface);color:var(--text);font-family:'Inter',sans-serif;width:100%;}
+.mem-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.icon-action{background:none;border:none;cursor:pointer;font-size:1rem;opacity:.5;transition:opacity .2s;padding:2px;}
+.icon-action:hover{opacity:1;}
+.badge{font-size:.6rem;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:8px;margin-bottom:2px;display:inline-block;}
+.badge.fact{background:rgba(245,158,11,.12);color:var(--accent);}
+.badge.pref{background:rgba(6,182,212,.12);color:var(--accent2);}
+.importance-dots{display:flex;gap:2px;margin-top:4px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--border);}
+.dot.filled{background:var(--accent);}
+.empty-state{text-align:center;color:var(--muted);padding:32px;font-size:.9rem;}
+.col-header{font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.col-count{background:var(--accent);color:#000;border-radius:20px;padding:1px 9px;font-size:.72rem;}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="/chat" class="nav-brand"><span>🤖</span> DejaVu.ai</a>
+  <div class="nav-links">
+    <a href="/chat"     class="nav-link">💬 Chat</a>
+    <a href="/memory"   class="nav-link active">🧠 Memory</a>
+    <a href="/insights" class="nav-link">📊 Insights</a>
+    <a href="/legal"    class="nav-link">⚖️ Legal</a>
+    <a href="/reminders"class="nav-link">🔔 Reminders</a>
+    <a href="/profile"  class="nav-link">👤 Profile</a>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()"><span id="t-icon">🌙</span> <span id="t-label">Dark</span></button>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Memory Editor</h1>
+    <p>Browse, search, edit, or delete everything DejaVu.ai knows about you.</p>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search memories…" oninput="liveSearch(this.value)" />
+    <button class="search-btn" onclick="liveSearch(document.getElementById('search-input').value)">Search</button>
+    <button class="search-btn" style="background:#666;color:#fff;" onclick="loadAll()">Show All</button>
+  </div>
+
+  <div class="mem-columns">
+    <div>
+      <div class="col-header">📌 Facts <span class="col-count" id="fact-count">0</span></div>
+      <div id="facts-list"></div>
+    </div>
+    <div>
+      <div class="col-header">⭐ Preferences <span class="col-count" id="pref-count">0</span></div>
+      <div id="prefs-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleTheme(){const d=document.body.classList.toggle('dark');localStorage.setItem('deja-theme',d?'dark':'light');document.getElementById('t-icon').textContent=d?'☀️':'🌙';document.getElementById('t-label').textContent=d?'Light':'Dark';}
+if(localStorage.getItem('deja-theme')==='dark'){document.body.classList.add('dark');document.getElementById('t-icon').textContent='☀️';document.getElementById('t-label').textContent='Light';}
+
+let debounceT;
+function liveSearch(q){clearTimeout(debounceT);debounceT=setTimeout(()=>fetchAndRender(q?`/api/memory/search?q=${encodeURIComponent(q)}`:`/api/memory`),200);}
+
+async function fetchAndRender(url){
+  const data=await fetch(url).then(r=>r.json());
+  renderList('facts-list','fact-count',data.facts||[],'fact');
+  renderList('prefs-list','pref-count',data.preferences||[],'pref');
+}
+
+function getT(e){return typeof e==='string'?e:e.text||'';}
+function getI(e){return typeof e==='object'&&e.importance?e.importance:3;}
+
+function renderList(elId,countId,items,type){
+  const el=document.getElementById(elId);
+  document.getElementById(countId).textContent=items.length;
+  if(!items.length){el.innerHTML='<div class="empty-state">Nothing here yet.</div>';return;}
+  el.innerHTML=items.map((item,i)=>{
+    const txt=getT(item);const imp=getI(item);
+    const dots=Array.from({length:5},(_,d)=>`<div class="dot ${d<imp?'filled':''}"></div>`).join('');
+    return `<div class="mem-card ${type}-card" id="${type}-${i}" style="animation-delay:${i*40}ms">
+      <div style="flex:1">
+        <span class="badge ${type}">${type==='fact'?'Fact':'Pref'}</span>
+        <div class="mem-text" id="${type}-text-${i}">${txt}</div>
+        <div class="importance-dots" title="Importance">${dots}</div>
+      </div>
+      <div class="mem-actions">
+        <button class="icon-action" title="Edit" onclick="startEdit('${type}',${i},'${txt.replace(/'/g,"\\'")}')">✏️</button>
+        <button class="icon-action" title="Delete" onclick="deleteEntry('${type}',${i})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startEdit(type,idx,currentText){
+  const el=document.getElementById(`${type}-text-${idx}`);
+  if(el.querySelector('input'))return;
+  const inp=document.createElement('input');
+  inp.className='mem-edit-input';inp.value=currentText;
+  inp.onkeydown=async e=>{
+    if(e.key==='Enter'){await saveEdit(type,idx,inp.value);fetchAndRender('/api/memory');}
+    if(e.key==='Escape'){el.textContent=currentText;}
+  };
+  el.innerHTML='';el.appendChild(inp);inp.focus();
+}
+
+async function saveEdit(type,idx,text){
+  await fetch(`/api/memory/${type}/${idx}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+}
+
+async function deleteEntry(type,idx){
+  if(!confirm('Delete this memory?'))return;
+  await fetch(`/api/memory/${type}/${idx}`,{method:'DELETE'});
+  fetchAndRender('/api/memory');
+}
+
+function loadAll(){document.getElementById('search-input').value='';fetchAndRender('/api/memory');}
+loadAll();
+</script>
+</body></html>

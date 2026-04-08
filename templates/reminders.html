@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reminders — DejaVu.ai</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='insights.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+.add-form{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;margin-bottom:24px;}
+.add-form input[type="text"]{padding:13px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:.93rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .25s;}
+.add-form input[type="text"]:focus{border-color:var(--accent);}
+.add-form input[type="text"]::placeholder{color:var(--muted);}
+.add-form input[type="datetime-local"]{padding:13px 12px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;outline:none;}
+.add-btn{padding:13px 22px;background:linear-gradient(135deg,#f59e0b,#06b6d4);border:none;border-radius:12px;color:#000;font-family:'Sora',sans-serif;font-weight:700;cursor:pointer;transition:all .25s;white-space:nowrap;}
+.add-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,.3);}
+.rem-list{display:flex;flex-direction:column;gap:12px;}
+.rem-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;animation:logSlide .3s ease both;transition:border-color .25s;}
+.rem-card:hover{border-color:var(--accent);}
+.rem-card.done{opacity:.4;text-decoration:line-through;}
+.rem-icon{font-size:1.6rem;flex-shrink:0;}
+.rem-body{flex:1;}
+.rem-text{font-size:.92rem;font-weight:600;color:var(--text);margin-bottom:4px;}
+.rem-time{font-size:.78rem;color:var(--muted);}
+.rem-del{background:none;border:none;cursor:pointer;font-size:1.1rem;opacity:.4;transition:opacity .2s;padding:4px;}
+.rem-del:hover{opacity:1;}
+.empty-state{text-align:center;color:var(--muted);padding:48px;font-size:.92rem;}
+/* Toast */
+#toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:10px;z-index:9999;}
+.toast{background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;padding:14px 18px;font-size:.88rem;color:var(--text);box-shadow:0 4px 24px rgba(245,158,11,.25);animation:toastIn .4s ease;max-width:300px;}
+.toast strong{display:block;font-family:'Sora',sans-serif;margin-bottom:4px;color:var(--accent);}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="/chat" class="nav-brand"><span>🤖</span> DejaVu.ai</a>
+  <div class="nav-links">
+    <a href="/chat"     class="nav-link">💬 Chat</a>
+    <a href="/memory"   class="nav-link">🧠 Memory</a>
+    <a href="/insights" class="nav-link">📊 Insights</a>
+    <a href="/legal"    class="nav-link">⚖️ Legal</a>
+    <a href="/reminders"class="nav-link active">🔔 Reminders</a>
+    <a href="/profile"  class="nav-link">👤 Profile</a>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()"><span id="t-icon">🌙</span> <span id="t-label">Dark</span></button>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>🔔 Reminders</h1>
+    <p>Set reminders and DejaVu.ai will notify you right in the browser when they're due.</p>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-title"><span>➕</span> New Reminder</div>
+    <div class="add-form">
+      <input type="text" id="rem-text" placeholder="Reminder text…" />
+      <input type="datetime-local" id="rem-time" />
+      <button class="add-btn" onclick="addReminder()">＋ Add</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🗓️</span> Your Reminders</div>
+    <div class="rem-list" id="rem-list"></div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+function toggleTheme(){const d=document.body.classList.toggle('dark');localStorage.setItem('deja-theme',d?'dark':'light');document.getElementById('t-icon').textContent=d?'☀️':'🌙';document.getElementById('t-label').textContent=d?'Light':'Dark';}
+if(localStorage.getItem('deja-theme')==='dark'){document.body.classList.add('dark');document.getElementById('t-icon').textContent='☀️';document.getElementById('t-label').textContent='Light';}
+
+function fmtTime(iso){return new Date(iso).toLocaleString();}
+
+async function loadReminders(){
+  const data=await fetch('/api/reminder').then(r=>r.json());
+  const el=document.getElementById('rem-list');
+  if(!data.length){el.innerHTML='<div class="empty-state">No reminders yet. Add one above!</div>';return;}
+  el.innerHTML=data.map(r=>`
+    <div class="rem-card ${r.done?'done':''}" style="border-left:3px solid ${r.done?'var(--muted)':'var(--accent)'}">
+      <div class="rem-icon">${r.done?'✅':'🔔'}</div>
+      <div class="rem-body">
+        <div class="rem-text">${r.text}</div>
+        <div class="rem-time">${fmtTime(r.remind_at)}${r.done?' — Done':''}</div>
+      </div>
+      <button class="rem-del" onclick="deleteReminder(${r.id})" title="Delete">🗑️</button>
+    </div>`).join('');
+}
+
+async function addReminder(){
+  const text=document.getElementById('rem-text').value.trim();
+  const time=document.getElementById('rem-time').value;
+  if(!text||!time){alert('Please fill in both fields.');return;}
+  const remindAt=new Date(time).toISOString();
+  await fetch('/api/reminder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,remind_at:remindAt})});
+  document.getElementById('rem-text').value='';
+  document.getElementById('rem-time').value='';
+  loadReminders();
+}
+
+async function deleteReminder(id){
+  await fetch(`/api/reminder/${id}`,{method:'DELETE'});
+  loadReminders();
+}
+
+function showToast(text){
+  const tc=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className='toast';t.innerHTML=`<strong>🔔 Reminder Due!</strong>${text}`;
+  tc.appendChild(t);setTimeout(()=>t.remove(),6000);
+}
+
+async function pollPending(){
+  try{
+    const r=await fetch('/api/reminder/pending').then(x=>x.json());
+    (r.due||[]).forEach(rem=>showToast(rem.text));
+  }catch(e){}
+}
+
+loadReminders();
+setInterval(pollPending,60000);
+pollPending();
+</script>
+</body></html>

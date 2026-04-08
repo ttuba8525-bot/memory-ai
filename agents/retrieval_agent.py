@@ -13,12 +13,13 @@ def retrieve_relevant_memory(user_input, memory_store):
         return ""
 
     # Format the memory into a string for the LLM evaluation
+    def _t(e): return e["text"] if isinstance(e, dict) else e
     memory_context = "Facts:\n"
     for f in facts:
-        memory_context += f"- {f}\n"
+        memory_context += f"- {_t(f)}\n"
     memory_context += "\nPreferences:\n"
     for p in prefs:
-        memory_context += f"- {p}\n"
+        memory_context += f"- {_t(p)}\n"
     
     prompt = f"""
     Given the user's new message, select the most relevant facts and preferences from the stored memory.
