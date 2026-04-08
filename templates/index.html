@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Memory AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="chat-container">
+        <header>
+            <h1>Agentic Memory AI</h1>
+            <p>I remember everything you tell me.</p>
+        </header>
+
+        <div class="chat-box" id="chat-box">
+            <div class="message ai">Hello! I am your companion AI. I can learn and remember facts and preferences about you across sessions. Tell me something about yourself!</div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off"/>
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+    
+    <div class="sidebar">
+        <h3>Memory Console Logs</h3>
+        <div id="memory-logs" class="memory-logs">
+            <!-- Memory logs go here -->
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
