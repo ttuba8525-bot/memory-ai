@@ -104,13 +104,17 @@ function copyToClipboard(text, btn) {
     });
 }
 
-function addMessage(text, sender) {
+function addMessage(text, sender, skipSave = false) {
     const row = document.createElement('div');
     row.classList.add('msg-row', sender);
 
     const avatar = document.createElement('div');
     avatar.classList.add('avatar', sender === 'user' ? 'user-avatar' : 'ai-avatar');
-    avatar.textContent = sender === 'user' ? '👤' : '🤖';
+    if (sender === 'ai') {
+        avatar.innerHTML = '<img src="/assets/logo.png" alt="AI" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+    } else {
+        avatar.textContent = '👤';
+    }
 
     const wrapper = document.createElement('div');
     const msgDiv = document.createElement('div');
@@ -126,7 +130,6 @@ function addMessage(text, sender) {
     timeSpan.classList.add('timestamp');
     timeSpan.textContent = getTimestamp();
 
-    // Copy button (AI messages only)
     if (sender === 'ai') {
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copy-btn';
@@ -143,7 +146,37 @@ function addMessage(text, sender) {
 
     chatBox.appendChild(row);
     chatBox.scrollTop = chatBox.scrollHeight;
+
+    // chat persistence across refresh is disabled as requested
 }
+
+// On startup, fetch suggestions instead of persisting history
+window.addEventListener('DOMContentLoaded', async () => {
+    const defaultMsg = document.getElementById('default-msg');
+    const suggContainer = document.getElementById('suggestions-container');
+    try {
+        const res = await fetch('/api/suggestions');
+        const data = await res.json();
+        if (data.suggestions && data.suggestions.length > 0) {
+            suggContainer.innerHTML = '';
+            data.suggestions.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = 'suggestion-chip';
+                btn.textContent = s;
+                btn.onclick = () => {
+                    userInput.value = s;
+                    suggContainer.classList.add('hidden');
+                    if (defaultMsg) defaultMsg.style.display = 'none';
+                    sendMessage();
+                };
+                suggContainer.appendChild(btn);
+            });
+            suggContainer.classList.remove('hidden');
+        }
+    } catch(e) {
+        console.error("Failed to load suggestions:", e);
+    }
+});
 
 
 function addLog(title, content, type) {

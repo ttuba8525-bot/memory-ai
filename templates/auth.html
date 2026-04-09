@@ -14,10 +14,9 @@
     </button>
 
     <div class="auth-wrapper">
-        <div class="auth-brand">
-            <div class="brand-icon">🤖</div>
-            <h1>DejaVu.ai</h1>
-            <p>Your memory-powered AI companion</p>
+        <div class="auth-header">
+            <div class="brand-icon"><img src="/assets/logo.png" alt="DejaVu" style="width:56px;height:56px;border-radius:50%;object-fit:cover;"></div>
+            <p>Your intelligent, memory-powered companion.</p>
         </div>
 
         <div class="auth-box">
@@ -26,17 +25,27 @@
                 <button id="signup-tab">Sign Up</button>
             </div>
             <form id="auth-form" onsubmit="event.preventDefault(); submitAuth();">
+                <div class="input-group" id="username-group" style="display:none;">
+                    <label>Username</label>
+                    <input type="text" id="username-input" placeholder="Your name" />
+                </div>
                 <div class="input-group">
                     <label>Email</label>
                     <input type="email" id="email-input" placeholder="you@example.com" required />
                 </div>
                 <div class="input-group">
                     <label>Password</label>
-                    <input type="password" id="password-input" placeholder="••••••••" required />
+                    <div style="position:relative;display:flex;align-items:center;">
+                        <input type="password" id="password-input" placeholder="••••••••" required style="width:100%; padding-right:30px;" />
+                        <span onclick="togglePassword('password-input', this)" style="position:absolute; right:10px; cursor:pointer; font-size: 1.1rem; filter: grayscale(100%);">👁️</span>
+                    </div>
                 </div>
-                <div class="input-group" id="username-group" style="display:none;">
-                    <label>Username</label>
-                    <input type="text" id="username-input" placeholder="Your name" />
+                <div class="input-group" id="confirm-password-group" style="display:none;">
+                    <label>Confirm Password</label>
+                    <div style="position:relative;display:flex;align-items:center;">
+                        <input type="password" id="confirm-password-input" placeholder="••••••••" style="width:100%; padding-right:30px;" />
+                        <span onclick="togglePassword('confirm-password-input', this)" style="position:absolute; right:10px; cursor:pointer; font-size: 1.1rem; filter: grayscale(100%);">👁️</span>
+                    </div>
                 </div>
                 <div id="auth-error" style="color:#ef4444;font-size:.82rem;margin-top:-8px;margin-bottom:6px;display:none;"></div>
                 <button type="submit" class="submit-btn" id="submit-btn">Continue →</button>
@@ -65,6 +74,7 @@
             document.getElementById('signup-tab').classList.remove('active');
             document.getElementById('submit-btn').textContent = 'Sign In →';
             document.getElementById('username-group').style.display = 'none';
+            document.getElementById('confirm-password-group').style.display = 'none';
         });
         document.getElementById('signup-tab').addEventListener('click', function() {
             isSignup = true;
@@ -72,23 +82,51 @@
             document.getElementById('login-tab').classList.remove('active');
             document.getElementById('submit-btn').textContent = 'Create Account →';
             document.getElementById('username-group').style.display = 'block';
+            document.getElementById('confirm-password-group').style.display = 'block';
         });
+
+        function togglePassword(inputId, iconEl) {
+            const el = document.getElementById(inputId);
+            if (el.type === 'password') {
+                el.type = 'text';
+                iconEl.style.filter = 'none'; // Highlight
+            } else {
+                el.type = 'password';
+                iconEl.style.filter = 'grayscale(100%)';
+            }
+        }
 
         async function submitAuth() {
             const email    = document.getElementById('email-input').value.trim();
             const password = document.getElementById('password-input').value;
+            const confirm_password = document.getElementById('confirm-password-input').value;
             const username = document.getElementById('username-input').value.trim();
             const errEl    = document.getElementById('auth-error');
             errEl.style.display = 'none';
+            
+            if (isSignup && password !== confirm_password) {
+                errEl.style.color = '#ef4444';
+                errEl.textContent = 'Passwords do not match.';
+                errEl.style.display = 'block';
+                return;
+            }
 
             const endpoint = isSignup ? '/auth/register' : '/auth/login';
             const body     = isSignup ? {email, password, username} : {email, password};
             try {
                 const r = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
                 const d = await r.json();
-                if(d.ok) { window.location.href = '/chat'; }
-                else { errEl.textContent = d.error || 'Something went wrong.'; errEl.style.display = 'block'; }
-            } catch(e) { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }
+                if(d.ok) {
+                    if (isSignup && d.msg) {
+                        errEl.style.color = '#10b981'; // Green color for success
+                        errEl.textContent = d.msg;
+                        errEl.style.display = 'block';
+                    } else {
+                        window.location.href = '/chat';
+                    }
+                }
+                else { errEl.style.color = '#ef4444'; errEl.textContent = d.error || 'Something went wrong.'; errEl.style.display = 'block'; }
+            } catch(e) { errEl.style.color = '#ef4444'; errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }
         }
 
         async function continueAsGuest() {

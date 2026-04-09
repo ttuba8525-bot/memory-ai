@@ -1,0 +1,182 @@
+{
+    "facts": [
+        {
+            "text": "name: Tuba",
+            "added_at": "2026-04-09T02:08:10.450084",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "pursuing BE in AIML",
+            "added_at": "2026-04-09T02:08:43.971692",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "studying in Basaveshwara Engineering College",
+            "added_at": "2026-04-09T02:09:23.380252",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "located in Bagalkote",
+            "added_at": "2026-04-09T02:09:23.380252",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "practices DSA",
+            "added_at": "2026-04-09T02:10:38.097284",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "knows Python",
+            "added_at": "2026-04-09T02:10:38.097284",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "currently using C++",
+            "added_at": "2026-04-09T02:10:38.097284",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "likes C++",
+            "added_at": "2026-04-09T02:11:08.024374",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "lives in or has a connection to Pune",
+            "added_at": "2026-04-09T02:11:55.209562",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "lives in Bagalkote",
+            "added_at": "2026-04-09T02:12:21.855522",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "studies in Basaveshwara Engineering College",
+            "added_at": "2026-04-09T02:12:21.855522",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "vegetarian",
+            "added_at": "2026-04-09T02:13:56.538871",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "diet: vegetarian",
+            "added_at": "2026-04-09T02:14:17.472539",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "studying Bachelor's in AI and Machine Learning (AIML) at Basaveshwara Engineering College in Bagalkote",
+            "added_at": "2026-04-09T02:22:17.414473",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "from/in Pune",
+            "added_at": "2026-04-09T02:22:17.414473",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "from/in Bagalkote",
+            "added_at": "2026-04-09T02:22:17.414473",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "has a golden retriever puppy",
+            "added_at": "2026-04-09T02:23:58.561854",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "studying BE in AIML at Basaveshwara Engineering College in Bagalkote",
+            "added_at": "2026-04-09T05:26:30.997414",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "proficient in Python and C++",
+            "added_at": "2026-04-09T05:26:30.997414",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "has a special spot in her heart for Pune and Bagalkote",
+            "added_at": "2026-04-09T05:26:30.997414",
+            "importance": 3,
+            "access_count": 0
+        }
+    ],
+    "preferences": [
+        {
+            "text": "likes Python",
+            "added_at": "2026-04-09T02:09:55.631948",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "likes C++",
+            "added_at": "2026-04-09T02:11:08.024374",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "Pune as a city",
+            "added_at": "2026-04-09T02:11:55.209562",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "likes Bagalkote",
+            "added_at": "2026-04-09T02:12:21.855522",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "does not eat meat",
+            "added_at": "2026-04-09T02:13:56.538871",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "into coding",
+            "added_at": "2026-04-09T02:22:17.414473",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "does not like coffee",
+            "added_at": "2026-04-09T05:23:19.223925",
+            "importance": 3,
+            "access_count": 0
+        },
+        {
+            "text": "likes spending time with her golden retriever puppy",
+            "added_at": "2026-04-09T05:26:30.997414",
+            "importance": 3,
+            "access_count": 0
+        }
+    ],
+    "goals": [
+        {
+            "text": "improve coding skills",
+            "added_at": "2026-04-09T02:10:38.097284",
+            "importance": 3,
+            "access_count": 0
+        }
+    ]
+}

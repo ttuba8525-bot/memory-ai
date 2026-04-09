@@ -1,0 +1,21 @@
+[
+  {
+    "ts": "2026-04-09T02:23:58.541953",
+    "removed": [],
+    "description": "User has a pet despite being allergic to pets.",
+    "kept_facts": [
+      "has a golden retriever puppy",
+      "is allergic to pets"
+    ],
+    "kept_prefs": []
+  },
+  {
+    "ts": "2026-04-09T05:23:19.203600",
+    "removed": [],
+    "description": "User has a pet but is allergic to pets.",
+    "kept_facts": [],
+    "kept_prefs": [
+      "does not like coffee"
+    ]
+  }
+]

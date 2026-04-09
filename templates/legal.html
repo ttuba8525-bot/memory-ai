@@ -5,13 +5,30 @@
 <title>Legal Analyzer — DejaVu.ai</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='insights.css') }}">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
-.doc-area{width:100%;min-height:280px;padding:18px;border-radius:14px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'Inter',sans-serif;font-size:.93rem;line-height:1.7;resize:vertical;outline:none;transition:border-color .25s;}
+.lc{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;}
+
+/* PDF drop zone */
+.upload-zone{border:2px dashed var(--border);border-radius:14px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .25s;margin-bottom:16px;background:var(--bg2);}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:rgba(245,158,11,.05);}
+.upload-zone .uz-icon{font-size:2rem;margin-bottom:8px;color:var(--accent);}
+.upload-zone .uz-title{font-family:'Sora',sans-serif;font-weight:600;font-size:.97rem;color:var(--text);margin-bottom:4px;}
+.upload-zone .uz-sub{font-size:.8rem;color:var(--muted);}
+.pdf-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:.82rem;font-weight:600;margin-bottom:12px;}
+.pdf-badge button{background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:0 2px;}
+.divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--muted);font-size:.8rem;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* Text area + buttons */
+.doc-area{width:100%;min-height:220px;padding:18px;border-radius:14px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'Inter',sans-serif;font-size:.93rem;line-height:1.7;resize:vertical;outline:none;transition:border-color .25s;}
 .doc-area:focus{border-color:var(--accent);}
 .doc-area::placeholder{color:var(--muted);}
 .analyze-btn{margin-top:14px;padding:14px 32px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#06b6d4);color:#000;font-family:'Sora',sans-serif;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:10px;}
 .analyze-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(245,158,11,.3);}
 .analyze-btn:disabled{opacity:.5;cursor:wait;}
+
+/* Results */
 .result-grid{display:grid;gap:20px;margin-top:28px;}
 .result-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px;animation:cardUp .5s ease both;box-shadow:0 4px 24px var(--shadow);}
 .result-card.summary-card{border-left:4px solid var(--accent);}
@@ -34,29 +51,52 @@
 </head>
 <body>
 <nav class="top-nav">
-  <a href="/chat" class="nav-brand"><span>🤖</span> DejaVu.ai</a>
+  <a href="/chat" class="nav-brand"><img src="/assets/logo.png" alt="DejaVu" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:0;"></a>
   <div class="nav-links">
-    <a href="/chat"     class="nav-link">💬 Chat</a>
-    <a href="/memory"   class="nav-link">🧠 Memory</a>
-    <a href="/insights" class="nav-link">📊 Insights</a>
-    <a href="/legal"    class="nav-link active">⚖️ Legal</a>
-    <a href="/reminders"class="nav-link">🔔 Reminders</a>
-    <a href="/profile"  class="nav-link">👤 Profile</a>
+    <a href="/chat"     class="nav-link"><i data-lucide="message-circle" class="lc"></i> Chat</a>
+    <a href="/memory"   class="nav-link"><i data-lucide="database" class="lc"></i> Memory</a>
+    <a href="/insights" class="nav-link"><i data-lucide="bar-chart-2" class="lc"></i> Insights</a>
+    <a href="/legal"    class="nav-link active"><i data-lucide="file-text" class="lc"></i> Legal</a>
+    <a href="/reminders"class="nav-link"><i data-lucide="bell" class="lc"></i> Reminders</a>
+    <a href="/profile"  class="nav-link"><i data-lucide="user" class="lc"></i> Profile</a>
   </div>
-  <button class="theme-btn" onclick="toggleTheme()"><span id="t-icon">🌙</span> <span id="t-label">Dark</span></button>
+  <button class="theme-btn" onclick="toggleTheme()"><span id="t-icon">◑</span> <span id="t-label">Dark</span></button>
 </nav>
 
 <div class="page">
   <div class="page-header">
-    <h1>⚖️ Legal Analyzer</h1>
-    <p>Paste any legal document, contract, or policy text and get an instant AI-powered breakdown.</p>
+    <h1>Legal Analyzer</h1>
+    <p>Upload a PDF or paste any legal text — get an instant AI-powered breakdown.</p>
   </div>
 
   <div class="card">
-    <div class="card-title"><span>📄</span> Document Input</div>
+    <div class="card-title"><i data-lucide="file-text" class="lc"></i> Document Input</div>
+
+    <!-- PDF drop zone -->
+    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('pdf-input').click()"
+         ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <div class="uz-icon"><i data-lucide="upload-cloud" style="width:36px;height:36px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;"></i></div>
+      <div class="uz-title">Drop your PDF here or click to browse</div>
+      <div class="uz-sub">Supports PDF files up to 10MB</div>
+    </div>
+    <input type="file" id="pdf-input" accept=".pdf" style="display:none;" onchange="handleFileSelect(this.files[0])">
+
+    <!-- PDF badge (shown after upload) -->
+    <div id="pdf-badge-wrap" style="display:none;">
+      <span class="pdf-badge">
+        <i data-lucide="file" class="lc"></i>
+        <span id="pdf-filename">document.pdf</span>
+        <span id="pdf-pages" style="opacity:.7"></span>
+        <button onclick="clearPdf()" title="Remove file">✕</button>
+      </span>
+    </div>
+
+    <div class="divider">or paste text directly</div>
+
     <textarea class="doc-area" id="doc-input" placeholder="Paste your legal document, contract, terms of service, NDA, or any legal text here…"></textarea>
     <button class="analyze-btn" id="analyze-btn" onclick="analyze()">
-      <span>🔍 Analyze Document</span>
+      <i data-lucide="search" style="width:18px;height:18px;stroke:#000;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;"></i>
+      <span>Analyze Document</span>
       <div class="spinner" id="spinner"></div>
     </button>
   </div>
@@ -65,17 +105,46 @@
 </div>
 
 <script>
-function toggleTheme(){const d=document.body.classList.toggle('dark');localStorage.setItem('deja-theme',d?'dark':'light');document.getElementById('t-icon').textContent=d?'☀️':'🌙';document.getElementById('t-label').textContent=d?'Light':'Dark';}
-if(localStorage.getItem('deja-theme')==='dark'){document.body.classList.add('dark');document.getElementById('t-icon').textContent='☀️';document.getElementById('t-label').textContent='Light';}
+// Theme
+function toggleTheme(){const d=document.body.classList.toggle('dark');localStorage.setItem('deja-theme',d?'dark':'light');document.getElementById('t-icon').textContent=d?'○':'◑';document.getElementById('t-label').textContent=d?'Light':'Dark';}
+if(localStorage.getItem('deja-theme')==='dark'){document.body.classList.add('dark');document.getElementById('t-icon').textContent='○';document.getElementById('t-label').textContent='Light';}
 
+// PDF handling
+function handleDragOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('dragover');}
+function handleDragLeave(e){document.getElementById('drop-zone').classList.remove('dragover');}
+function handleDrop(e){e.preventDefault();handleDragLeave(e);const f=e.dataTransfer.files[0];if(f)handleFileSelect(f);}
+
+async function handleFileSelect(file){
+  if(!file||!file.name.toLowerCase().endsWith('.pdf')){alert('Please select a PDF file.');return;}
+  const fd=new FormData();fd.append('file',file);
+  document.getElementById('drop-zone').style.opacity='.5';
+  try{
+    const d=await fetch('/api/legal/upload-pdf',{method:'POST',body:fd}).then(r=>r.json());
+    if(d.error){alert(d.error);return;}
+    document.getElementById('doc-input').value=d.text;
+    document.getElementById('pdf-filename').textContent=file.name;
+    document.getElementById('pdf-pages').textContent=`· ${d.pages} page${d.pages!==1?'s':''}`;
+    document.getElementById('pdf-badge-wrap').style.display='block';
+    document.getElementById('drop-zone').style.display='none';
+  }catch(e){alert('Failed to read PDF. Please try again.');}
+  finally{document.getElementById('drop-zone').style.opacity='1';}
+}
+
+function clearPdf(){
+  document.getElementById('doc-input').value='';
+  document.getElementById('pdf-badge-wrap').style.display='none';
+  document.getElementById('drop-zone').style.display='block';
+  document.getElementById('pdf-input').value='';
+}
+
+// Analyze
 async function analyze(){
   const text=document.getElementById('doc-input').value.trim();
-  if(!text)return alert('Please paste a document first.');
+  if(!text)return alert('Please upload a PDF or paste document text first.');
   const btn=document.getElementById('analyze-btn');
   const sp=document.getElementById('spinner');
   btn.disabled=true;sp.style.display='block';
   document.getElementById('results').style.display='none';
-
   try{
     const data=await fetch('/api/legal/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})}).then(r=>r.json());
     renderResults(data);
@@ -88,17 +157,20 @@ function renderResults(d){
   el.style.display='grid';
   el.innerHTML=`
   <div class="result-card summary-card" style="animation-delay:0s">
-    <div class="result-title">📋 Summary</div>
+    <div class="result-title"><i data-lucide="align-left" class="lc"></i> Summary</div>
     <div class="summary-text">${d.summary||'No summary available.'}</div>
   </div>
   <div class="result-card risks-card" style="animation-delay:.1s">
-    <div class="result-title">⚠️ Identified Risks</div>
-    ${(d.risks||[]).length?d.risks.map(r=>`<div class="risk-item"><span class="risk-icon">⚠</span><span>${r}</span></div>`).join(''):'<p style="color:var(--muted);font-size:.87rem;">No significant risks identified.</p>'}
+    <div class="result-title"><i data-lucide="alert-triangle" class="lc" style="color:#ef4444"></i> Identified Risks</div>
+    ${(d.risks||[]).length?d.risks.map(r=>`<div class="risk-item"><span class="risk-icon">!</span><span>${r}</span></div>`).join(''):'<p style="color:var(--muted);font-size:.87rem;">No significant risks identified.</p>'}
   </div>
   <div class="result-card clauses-card" style="animation-delay:.2s">
-    <div class="result-title">📑 Key Clauses</div>
+    <div class="result-title"><i data-lucide="book-open" class="lc"></i> Key Clauses</div>
     ${(d.clauses||[]).length?d.clauses.map(c=>`<div class="clause-item"><h4>${c.title||'Clause'}</h4><p>${c.text||''}</p></div>`).join(''):'<p style="color:var(--muted);font-size:.87rem;">No specific clauses extracted.</p>'}
   </div>`;
+  lucide.createIcons();
 }
+
+lucide.createIcons();
 </script>
 </body></html>

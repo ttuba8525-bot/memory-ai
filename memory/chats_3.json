@@ -1,0 +1,68 @@
+[
+  {
+    "timestamp": "2026-04-09T04:58:53.204173",
+    "user_input": "hey there",
+    "ai_response": "Hello. It's nice to assist you. Please provide a specific inquiry or topic you'd like to discuss, and I'll do my best to provide a concise and accurate response.",
+    "persona": "formal"
+  },
+  {
+    "timestamp": "2026-04-09T04:59:26.082618",
+    "user_input": "tell me about myself",
+    "ai_response": "I'm sorry, I'm having trouble connecting to my brain right now.",
+    "persona": "formal"
+  },
+  {
+    "timestamp": "2026-04-09T05:01:49.158353",
+    "user_input": "hey there",
+    "ai_response": "Again! It seems like we're starting fresh. I don't have any information about you (yet!), but I'm excited to get to know you! What's been going on in your world lately?",
+    "persona": "friend"
+  },
+  {
+    "timestamp": "2026-04-09T05:02:29.593243",
+    "user_input": "tell me abou myself",
+    "ai_response": "I'm sorry, I'm having trouble connecting to my brain right now.",
+    "persona": "friend"
+  },
+  {
+    "timestamp": "2026-04-09T05:07:25.131856",
+    "user_input": "Ask about my fact: pursuing BE in AIML",
+    "ai_response": "I'm sorry, I'm having trouble connecting to my brain right now.",
+    "persona": "friend"
+  },
+  {
+    "timestamp": "2026-04-09T05:15:00.100607",
+    "user_input": "Hi there",
+    "ai_response": "Hey! It's so great to meet you! How's your day going so far?",
+    "persona": "friend"
+  },
+  {
+    "timestamp": "2026-04-09T05:15:11.842968",
+    "user_input": "Ask about my fact: diet: vegetarian",
+    "ai_response": "So, I heard you're a vegetarian! That's awesome! What's your fave veggie dish or restaurant you've been to lately?",
+    "persona": "friend"
+  },
+  {
+    "timestamp": "2026-04-09T05:23:12.435240",
+    "user_input": "I absolutely hate coffee and never drink it.",
+    "ai_response": "No coffee for you, huh? That's totally cool! More tea for the rest of us, I guess. What's your go-to morning pick-me-up, or do you just naturally feel bright-eyed and bushy-tailed?",
+    "persona": "friend"
+  },
+  {
+    "timestamp": "2026-04-09T05:23:26.931466",
+    "user_input": "Actually wait, I love coffee and drink it every morning without fail.",
+    "ai_response": "HA! Gotcha! I knew it! I was like, \"Naaaah, nobody can resist the charm of coffee!\" What's your coffee style, btw? Dark roast, creamy latte, or something in between?",
+    "persona": "friend"
+  },
+  {
+    "timestamp": "2026-04-09T05:25:22.913460",
+    "user_input": "hey there",
+    "ai_response": "Hey there, friend! How's life treating you today? Got a smile on your face and a spring in your step?",
+    "persona": "friend"
+  },
+  {
+    "timestamp": "2026-04-09T05:26:18.888256",
+    "user_input": "what do you know about me",
+    "ai_response": "I know a thing or two about you, Tuba! You're studying BE in AIML at Basaveshwara Engineering College in Bagalkote, and you're quite the coding whiz, proficient in Python and C++. You're a vegetarian, and when you're not hitting the books, you love spending time with your adorable golden retriever puppy! You also have a special spot in your heart for Pune and Bagalkote. And, initially, I thought you didn't like coffee, but... well, we cleared that up! What else can I learn about you?",
+    "persona": "friend"
+  }
+]

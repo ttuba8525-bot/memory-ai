@@ -3,6 +3,8 @@ import os
 from flask import Blueprint, request, jsonify, session, redirect, url_for
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User
+import secrets
+from utils.email_sender import send_verification_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -17,16 +19,25 @@ def register():
     if not username or not email or not password:
         return jsonify({'error': 'All fields required'}), 400
 
+    if len(password) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters long'}), 400
+
     if User.query.filter((User.email == email) | (User.username == username)).first():
         return jsonify({'error': 'Email or username already taken'}), 409
 
     user = User(username=username, email=email)
     user.set_password(password)
+    user.verification_token = secrets.token_urlsafe(32)
+    user.is_verified = False
     db.session.add(user)
     db.session.commit()
-    login_user(user, remember=True)
+    
     _ensure_memory_dir(user)
-    return jsonify({'ok': True, 'user': user.username})
+    
+    verify_url = request.host_url.rstrip("/") + url_for('auth.verify', token=user.verification_token)
+    send_verification_email(user.email, verify_url)
+    
+    return jsonify({'ok': True, 'user': user.username, 'msg': 'Please check your email to verify your account.'})
 
 
 @auth_bp.route('/auth/login', methods=['POST'])
@@ -41,6 +52,17 @@ def login():
 
     login_user(user, remember=True)
     return jsonify({'ok': True, 'user': user.username})
+
+@auth_bp.route('/auth/verify/<token>', methods=['GET'])
+def verify(token):
+    user = User.query.filter_by(verification_token=token).first()
+    if not user:
+        return "Invalid or expired verification token.", 400
+        
+    user.is_verified = True
+    user.verification_token = None
+    db.session.commit()
+    return redirect(url_for('auth_page'))
 
 
 @auth_bp.route('/auth/guest', methods=['POST'])

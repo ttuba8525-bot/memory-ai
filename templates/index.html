@@ -47,11 +47,7 @@
         <header>
             <div class="header-brand">
                 <button class="icon-btn" id="sidebar-toggle" title="Toggle Memory Panel">≡</button>
-                <div class="brand-icon" style="font-size:1.1rem;font-weight:700;font-family:'Sora',sans-serif;letter-spacing:-1px;">DV</div>
-                <div class="brand-text">
-                    <h1>DejaVu.ai</h1>
-                    <p>Memory-powered AI companion</p>
-                </div>
+                <div class="brand-icon"><img src="/assets/logo.png" alt="DejaVu" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"></div>
             </div>
             <div class="header-actions">
                 <!-- Persona -->
@@ -72,8 +68,9 @@
         </header>
 
         <div class="chat-box" id="chat-box">
-            <div class="msg-row ai">
-                <div class="avatar ai-avatar">🤖</div>
+            <div id="suggestions-container" class="suggestions-container hidden"></div>
+            <div class="msg-row ai" id="default-msg">
+                <div class="avatar ai-avatar"><img src="/assets/logo.png" alt="AI" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"></div>
                 <div>
                     <div class="message-content ai">Hello! I'm your AI companion with persistent memory. I remember what you tell me across sessions. Try sharing something about yourself!</div>
                     <span class="timestamp">Just now</span>
@@ -123,8 +120,12 @@
         // Persona
         const savedPersona = localStorage.getItem('deja-persona') || 'friend';
         document.getElementById('persona-select').value = savedPersona;
+        document.body.classList.add('persona-' + savedPersona);
         async function changePersona(p) {
             localStorage.setItem('deja-persona', p);
+            document.body.className = document.body.className.replace(/\bpersona-\w+\b/g, '').trim();
+            if(document.body.className !== '') { document.body.className += ' '; }
+            document.body.classList.add('persona-' + p);
             await fetch('/api/persona', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({persona:p})});
         }
 

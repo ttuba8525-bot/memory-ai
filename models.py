@@ -13,6 +13,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=True)   # None for guests
     is_guest      = db.Column(db.Boolean, default=False)
     persona       = db.Column(db.String(40), default='friend')  # tutor/friend/coach/formal
+    is_verified   = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.String(100), nullable=True)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
@@ -29,6 +31,9 @@ class User(UserMixin, db.Model):
 
     def reminders_path(self):
         return f"memory/reminders_{self.id}.json"
+
+    def chats_path(self):
+        return f"memory/chats_{self.id}.json"
 
     def __repr__(self):
         return f"<User {self.username}>"

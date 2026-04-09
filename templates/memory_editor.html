@@ -12,12 +12,14 @@
 .search-bar input::placeholder{color:var(--muted);}
 .search-btn{padding:12px 20px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#06b6d4);border:none;color:#000;font-family:'Sora',sans-serif;font-weight:700;cursor:pointer;transition:all .25s;}
 .search-btn:hover{transform:translateY(-1px);}
-.mem-columns{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
-@media(max-width:700px){.mem-columns{grid-template-columns:1fr;}}
+.mem-columns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+@media(max-width:900px){.mem-columns{grid-template-columns:1fr 1fr;}}
+@media(max-width:600px){.mem-columns{grid-template-columns:1fr;}}
 .mem-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;animation:logSlide .3s ease both;transition:border-color .2s;}
 .mem-card:hover{border-color:var(--accent);}
 .mem-card.fact-card{border-left:3px solid var(--accent);}
 .mem-card.pref-card{border-left:3px solid var(--accent2);}
+.mem-card.goal-card{border-left:3px solid #a855f7;}
 .mem-text{flex:1;font-size:.85rem;line-height:1.5;color:var(--text);word-break:break-word;}
 .mem-edit-input{flex:1;font-size:.85rem;padding:4px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--surface);color:var(--text);font-family:'Inter',sans-serif;width:100%;}
 .mem-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
@@ -26,17 +28,20 @@
 .badge{font-size:.6rem;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:8px;margin-bottom:2px;display:inline-block;}
 .badge.fact{background:rgba(245,158,11,.12);color:var(--accent);}
 .badge.pref{background:rgba(6,182,212,.12);color:var(--accent2);}
+.badge.goal{background:rgba(168,85,247,.12);color:#a855f7;}
 .importance-dots{display:flex;gap:2px;margin-top:4px;}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--border);}
 .dot.filled{background:var(--accent);}
+.dot.filled.goal{background:#a855f7;}
 .empty-state{text-align:center;color:var(--muted);padding:32px;font-size:.9rem;}
 .col-header{font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
 .col-count{background:var(--accent);color:#000;border-radius:20px;padding:1px 9px;font-size:.72rem;}
+.col-count.goal{background:#a855f7;}
 </style>
 </head>
 <body>
 <nav class="top-nav">
-  <a href="/chat" class="nav-brand"><span>🤖</span> DejaVu.ai</a>
+  <a href="/chat" class="nav-brand"><img src="/assets/logo.png" alt="DejaVu" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:0;"></a>
   <div class="nav-links">
     <a href="/chat"     class="nav-link">💬 Chat</a>
     <a href="/memory"   class="nav-link active">🧠 Memory</a>
@@ -45,36 +50,52 @@
     <a href="/reminders"class="nav-link">🔔 Reminders</a>
     <a href="/profile"  class="nav-link">👤 Profile</a>
   </div>
-  <button class="theme-btn" onclick="toggleTheme()"><span id="t-icon">🌙</span> <span id="t-label">Dark</span></button>
+  <button class="theme-btn" onclick="toggleTheme()"><span id="t-icon">◑</span> <span id="t-label">Dark</span></button>
 </nav>
 
 <div class="page">
   <div class="page-header">
-    <h1>Memory Editor</h1>
-    <p>Browse, search, edit, or delete everything DejaVu.ai knows about you.</p>
+    <h1>🧠 Memory Editor</h1>
+    <p>Browse, search, edit, or delete everything DejaVu.ai knows about you — including your facts, preferences, and goals.</p>
   </div>
 
-  <div class="search-bar">
-    <input type="text" id="search-input" placeholder="Search memories…" oninput="liveSearch(this.value)" />
-    <button class="search-btn" onclick="liveSearch(document.getElementById('search-input').value)">Search</button>
-    <button class="search-btn" style="background:#666;color:#fff;" onclick="loadAll()">Show All</button>
+  <div style="display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px;">
+    <button id="tab-memory" class="search-btn" onclick="switchTab('memory')">🧠 Active Memory</button>
+    <button id="tab-chats" class="search-btn" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);" onclick="switchTab('chats')">📜 Past Chats</button>
   </div>
 
-  <div class="mem-columns">
-    <div>
-      <div class="col-header">📌 Facts <span class="col-count" id="fact-count">0</span></div>
-      <div id="facts-list"></div>
+  <div id="section-memory">
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Search memories…" oninput="liveSearch(this.value)" />
+      <button class="search-btn" onclick="liveSearch(document.getElementById('search-input').value)">Search</button>
+      <button class="search-btn" style="background:#666;color:#fff;" onclick="loadAll()">Show All</button>
     </div>
-    <div>
-      <div class="col-header">⭐ Preferences <span class="col-count" id="pref-count">0</span></div>
-      <div id="prefs-list"></div>
+
+    <div class="mem-columns">
+      <div>
+        <div class="col-header">📌 Facts <span class="col-count" id="fact-count">0</span></div>
+        <div id="facts-list"></div>
+      </div>
+      <div>
+        <div class="col-header">⭐ Preferences <span class="col-count" id="pref-count">0</span></div>
+        <div id="prefs-list"></div>
+      </div>
+      <div>
+        <div class="col-header">🎯 Goals <span class="col-count goal" id="goal-count">0</span></div>
+        <div id="goals-list"></div>
+      </div>
     </div>
+  </div>
+
+  <div id="section-chats" style="display:none; max-width:800px; margin:0 auto;">
+    <div class="col-header">📜 Archived Chat Sessions</div>
+    <div id="chats-list" style="display:flex;flex-direction:column;gap:16px;"></div>
   </div>
 </div>
 
 <script>
-function toggleTheme(){const d=document.body.classList.toggle('dark');localStorage.setItem('deja-theme',d?'dark':'light');document.getElementById('t-icon').textContent=d?'☀️':'🌙';document.getElementById('t-label').textContent=d?'Light':'Dark';}
-if(localStorage.getItem('deja-theme')==='dark'){document.body.classList.add('dark');document.getElementById('t-icon').textContent='☀️';document.getElementById('t-label').textContent='Light';}
+function toggleTheme(){const d=document.body.classList.toggle('dark');localStorage.setItem('deja-theme',d?'dark':'light');document.getElementById('t-icon').textContent=d?'○':'◑';document.getElementById('t-label').textContent=d?'Light':'Dark';}
+if(localStorage.getItem('deja-theme')==='dark'){document.body.classList.add('dark');document.getElementById('t-icon').textContent='○';document.getElementById('t-label').textContent='Light';}
 
 let debounceT;
 function liveSearch(q){clearTimeout(debounceT);debounceT=setTimeout(()=>fetchAndRender(q?`/api/memory/search?q=${encodeURIComponent(q)}`:`/api/memory`),200);}
@@ -83,26 +104,28 @@ async function fetchAndRender(url){
   const data=await fetch(url).then(r=>r.json());
   renderList('facts-list','fact-count',data.facts||[],'fact');
   renderList('prefs-list','pref-count',data.preferences||[],'pref');
+  renderList('goals-list','goal-count',data.goals||[],'goal');
 }
 
-function getT(e){return typeof e==='string'?e:e.text||'';}
-function getI(e){return typeof e==='object'&&e.importance?e.importance:3;}
+function getT(e){return typeof e==='string'?e:(e.text||e.content||'');}
+function getI(e){return typeof e==='object'&&e.importance?Math.min(5,Math.max(1,e.importance)):3;}
 
 function renderList(elId,countId,items,type){
   const el=document.getElementById(elId);
   document.getElementById(countId).textContent=items.length;
   if(!items.length){el.innerHTML='<div class="empty-state">Nothing here yet.</div>';return;}
+  const labels={'fact':'Fact','pref':'Pref','goal':'Goal'};
   el.innerHTML=items.map((item,i)=>{
     const txt=getT(item);const imp=getI(item);
-    const dots=Array.from({length:5},(_,d)=>`<div class="dot ${d<imp?'filled':''}"></div>`).join('');
+    const dots=Array.from({length:5},(_,d)=>`<div class="dot ${d<imp?'filled '+type:''}"></div>`).join('');
     return `<div class="mem-card ${type}-card" id="${type}-${i}" style="animation-delay:${i*40}ms">
       <div style="flex:1">
-        <span class="badge ${type}">${type==='fact'?'Fact':'Pref'}</span>
+        <span class="badge ${type}">${labels[type]}</span>
         <div class="mem-text" id="${type}-text-${i}">${txt}</div>
-        <div class="importance-dots" title="Importance">${dots}</div>
+        <div class="importance-dots" title="Importance: ${imp}/5">${dots}</div>
       </div>
       <div class="mem-actions">
-        <button class="icon-action" title="Edit" onclick="startEdit('${type}',${i},'${txt.replace(/'/g,"\\'")}')">✏️</button>
+        <button class="icon-action" title="Edit" onclick="startEdit('${type}',${i},'${txt.replace(/'/g,"\\'").replace(/\n/g,' ')}')">✏️</button>
         <button class="icon-action" title="Delete" onclick="deleteEntry('${type}',${i})">🗑️</button>
       </div>
     </div>`;
@@ -122,7 +145,8 @@ function startEdit(type,idx,currentText){
 }
 
 async function saveEdit(type,idx,text){
-  await fetch(`/api/memory/${type}/${idx}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  const apiType = type==='pref'?'pref':type;  // fact, pref, goal
+  await fetch(`/api/memory/${apiType}/${idx}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
 }
 
 async function deleteEntry(type,idx){
@@ -133,5 +157,51 @@ async function deleteEntry(type,idx){
 
 function loadAll(){document.getElementById('search-input').value='';fetchAndRender('/api/memory');}
 loadAll();
+
+async function loadChats() {
+  const el = document.getElementById('chats-list');
+  el.innerHTML = '<div class="empty-state">Loading archives...</div>';
+  const data = await fetch('/api/chats').then(r => r.json());
+  if(!data || !data.length) {
+    el.innerHTML = '<div class="empty-state">No archived chats yet. Tell your AI something!</div>';
+    return;
+  }
+  const reversed = [...data].reverse();
+  el.innerHTML = reversed.map(chat => `
+    <div class="mem-card" style="flex-direction:column;gap:8px;padding:16px;">
+      <div style="font-size:0.75rem;color:var(--muted);font-family:'Sora',sans-serif;font-weight:600;">
+        ${new Date(chat.timestamp).toLocaleString()} • Persona: ${chat.persona||'friend'}
+      </div>
+      <div style="background:var(--surface);width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);color:var(--text);font-size:0.85rem;">
+        <span style="opacity:0.6;font-weight:600;display:block;margin-bottom:4px;font-size:0.7rem;">YOU</span>
+        ${chat.user_input}
+      </div>
+      <div style="background:var(--surface2);width:100%;padding:10px;border-radius:8px;border-left:3px solid var(--accent);color:var(--text);font-size:0.85rem;">
+        <span style="opacity:0.6;font-weight:600;display:block;margin-bottom:4px;font-size:0.7rem;">DEJAVU AI</span>
+        ${chat.ai_response}
+      </div>
+    </div>
+  `).join('');
+}
+
+function switchTab(tab) {
+  if (tab === 'memory') {
+    document.getElementById('section-memory').style.display = 'block';
+    document.getElementById('section-chats').style.display = 'none';
+    document.getElementById('tab-memory').style.background = 'linear-gradient(135deg,#f59e0b,#06b6d4)';
+    document.getElementById('tab-memory').style.color = '#000';
+    document.getElementById('tab-chats').style.background = 'var(--surface2)';
+    document.getElementById('tab-chats').style.color = 'var(--text)';
+  } else {
+    document.getElementById('section-memory').style.display = 'none';
+    document.getElementById('section-chats').style.display = 'block';
+    document.getElementById('tab-chats').style.background = 'linear-gradient(135deg,#f59e0b,#06b6d4)';
+    document.getElementById('tab-chats').style.color = '#000';
+    document.getElementById('tab-memory').style.background = 'var(--surface2)';
+    document.getElementById('tab-memory').style.color = 'var(--text)';
+    loadChats();
+  }
+}
+
 </script>
 </body></html>

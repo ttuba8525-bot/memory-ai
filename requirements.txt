@@ -5,3 +5,4 @@ flask-login
 flask-sqlalchemy
 werkzeug
 APScheduler
+pdfplumber

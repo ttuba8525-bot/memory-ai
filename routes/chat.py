@@ -62,6 +62,24 @@ def save_reminders(data):
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)
 
+def load_archived_chats():
+    if not current_user.is_authenticated:
+        return []
+    try:
+        with open(current_user.chats_path(), 'r') as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def save_archived_chats(data):
+    if not current_user.is_authenticated:
+        return
+    path = current_user.chats_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
 
 # Per-request session history (resets on restart; good enough for demo)
 _session_history = {}
@@ -123,40 +141,53 @@ def chat():
     history.append({"role": "assistant", "content": ai_response})
     stats["turns"] += 1
 
-    # 5. Extract memory
+    archive = load_archived_chats()
+    archive.append({
+        "timestamp": datetime.utcnow().isoformat(),
+        "user_input": user_input,
+        "ai_response": ai_response,
+        "persona": persona_key
+    })
+    save_archived_chats(archive)
+
+    # 5. Extract memory (facts, prefs, goals)
     t0 = time.time()
-    new_facts, new_prefs = extract_memory(user_input, ai_response)
+    new_facts, new_prefs, new_goals = extract_memory(user_input, ai_response)
     trace.append({"step": "Memory Extraction", "ms": round((time.time()-t0)*1000),
-                  "result": f"facts={new_facts}, prefs={new_prefs}"})
+                  "result": f"facts={new_facts}, prefs={new_prefs}, goals={new_goals}"})
 
     # 6. Resolve conflicts & store
-    if new_facts or new_prefs:
+    if new_facts or new_prefs or new_goals:
         t0 = time.time()
-        resolved_facts, resolved_prefs = resolve_memory_conflicts(new_facts, new_prefs, store)
+        resolved_facts, resolved_prefs, resolved_goals, conflict_desc = resolve_memory_conflicts(
+            new_facts, new_prefs, store, new_goals=new_goals
+        )
         elapsed = round((time.time()-t0)*1000)
 
         removed = [f for f in new_facts if f not in resolved_facts] + \
-                  [p for p in new_prefs if p not in resolved_prefs]
-        if removed:
+                  [p for p in new_prefs  if p not in resolved_prefs]
+        if removed or conflict_desc:
             save_conflict({
                 "ts": datetime.utcnow().isoformat(),
                 "removed": removed,
+                "description": conflict_desc or "",
                 "kept_facts": resolved_facts,
                 "kept_prefs": resolved_prefs
             })
 
-        store.update_memory(resolved_facts, resolved_prefs)
+        store.update_memory(resolved_facts, resolved_prefs, resolved_goals)
         stats["facts_this_session"] += len(new_facts)
         stats["prefs_this_session"] += len(new_prefs)
         trace.append({"step": "Conflict Resolution", "ms": elapsed,
-                      "result": f"removed={removed or 'none'}"})
+                      "result": conflict_desc or (f"removed={removed}" if removed else "no conflicts")})
 
     return jsonify({
-        "response": ai_response,
+        "response":       ai_response,
         "extracted_facts": new_facts,
         "extracted_prefs": new_prefs,
+        "extracted_goals": new_goals,
         "relevant_memory": relevant_memory,
-        "agent_trace": trace
+        "agent_trace":    trace
     })
 
 
@@ -201,6 +232,20 @@ def delete_pref(idx):
     return jsonify({"ok": True})
 
 
+@chat_bp.route("/api/memory/goal/<int:idx>", methods=["PUT"])
+def update_goal(idx):
+    text = (request.json or {}).get("text", "").strip()
+    if text:
+        get_store().update_goal(idx, text)
+    return jsonify({"ok": True})
+
+
+@chat_bp.route("/api/memory/goal/<int:idx>", methods=["DELETE"])
+def delete_goal(idx):
+    get_store().delete_goal(idx)
+    return jsonify({"ok": True})
+
+
 # ── /api/memory-stats ─────────────────────────────────────────────────────────
 
 @chat_bp.route("/api/memory-stats", methods=["GET"])
@@ -211,7 +256,9 @@ def memory_stats():
     stats = get_stats()
 
     def get_text(e):
-        return e["text"] if isinstance(e, dict) else e
+        if isinstance(e, dict):
+            return str(e.get("text") or e.get("content") or "")
+        return str(e)
 
     def get_date(e):
         if isinstance(e, dict) and "added_at" in e:
@@ -315,7 +362,8 @@ def pending_reminders():
     changed = False
     for r in load_reminders():
         try:
-            t = datetime.fromisoformat(r["remind_at"])
+            t_str = r["remind_at"].replace("Z", "+00:00").replace("+00:00", "").split(".")[0]
+            t = datetime.fromisoformat(t_str)
             if not r["done"] and t <= now:
                 r["done"] = True
                 due.append(r)
@@ -361,3 +409,60 @@ def legal_analyze():
         except Exception:
             pass
     return jsonify({"summary": raw, "risks": [], "clauses": []})
+
+
+# ── /api/legal/upload-pdf ────────────────────────────────────────────────────
+
+@chat_bp.route("/api/legal/upload-pdf", methods=["POST"])
+def legal_upload_pdf():
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    f = request.files["file"]
+    if not f.filename.lower().endswith(".pdf"):
+        return jsonify({"error": "Only PDF files are supported"}), 400
+    try:
+        import pdfplumber, io
+        pdf_bytes = io.BytesIO(f.read())
+        text_parts = []
+        with pdfplumber.open(pdf_bytes) as pdf:
+            for page in pdf.pages:
+                t = page.extract_text()
+                if t:
+                    text_parts.append(t)
+        full_text = "\n\n".join(text_parts).strip()
+        if not full_text:
+            return jsonify({"error": "Could not extract text from this PDF. It may be scanned/image-based."}), 422
+        return jsonify({"text": full_text, "pages": len(pdf.pages)})
+    except ImportError:
+        return jsonify({"error": "pdfplumber not installed. Run: pip install pdfplumber"}), 500
+    except Exception as e:
+        return jsonify({"error": f"PDF parsing failed: {str(e)}"}), 500
+
+
+# ── /api/suggestions & /api/chats ─────────────────────────────────────────────
+
+@chat_bp.route("/api/suggestions", methods=["GET"])
+def get_suggestions():
+    store = get_store()
+    mem = store.load_memory()
+    facts = [f for f in mem.get("facts", []) if len(str(f.get("text", ""))) > 5]
+    prefs = [p for p in mem.get("preferences", []) if len(str(p.get("text", ""))) > 5]
+    goals = [g for g in mem.get("goals", []) if len(str(g.get("text", ""))) > 5]
+    
+    import random
+    pool = []
+    for f in facts:
+        pool.append({"type": "fact", "text": f"Ask about my fact: {f.get('text')}"})
+    for p in prefs:
+        pool.append({"type": "pref", "text": f"Discuss my preference: {p.get('text')}"})
+    for g in goals:
+        pool.append({"type": "goal", "text": f"Review my goal: {g.get('text')}"})
+    
+    random.shuffle(pool)
+    suggestions = pool[:3]
+    return jsonify({"suggestions": [s["text"] for s in suggestions]})
+
+@chat_bp.route("/api/chats", methods=["GET"])
+@login_required
+def get_archived_chats():
+    return jsonify(load_archived_chats())

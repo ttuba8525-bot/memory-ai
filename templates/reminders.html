@@ -33,7 +33,7 @@
 </head>
 <body>
 <nav class="top-nav">
-  <a href="/chat" class="nav-brand"><span>🤖</span> DejaVu.ai</a>
+  <a href="/chat" class="nav-brand"><img src="/assets/logo.png" alt="DejaVu" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:0;"></a>
   <div class="nav-links">
     <a href="/chat"     class="nav-link">💬 Chat</a>
     <a href="/memory"   class="nav-link">🧠 Memory</a>
@@ -75,7 +75,7 @@ if(localStorage.getItem('deja-theme')==='dark'){document.body.classList.add('dar
 function fmtTime(iso){return new Date(iso).toLocaleString();}
 
 async function loadReminders(){
-  const data=await fetch('/api/reminder').then(r=>r.json());
+  const data=await fetch('/api/reminder', {cache: 'no-store'}).then(r=>r.json());
   const el=document.getElementById('rem-list');
   if(!data.length){el.innerHTML='<div class="empty-state">No reminders yet. Add one above!</div>';return;}
   el.innerHTML=data.map(r=>`
@@ -112,15 +112,6 @@ function showToast(text){
   tc.appendChild(t);setTimeout(()=>t.remove(),6000);
 }
 
-async function pollPending(){
-  try{
-    const r=await fetch('/api/reminder/pending').then(x=>x.json());
-    (r.due||[]).forEach(rem=>showToast(rem.text));
-  }catch(e){}
-}
-
 loadReminders();
-setInterval(pollPending,60000);
-pollPending();
 </script>
 </body></html>
